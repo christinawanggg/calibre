@@ -240,7 +240,20 @@ UTR was considered and dropped: ~15–20% coverage in the padel population, less
 ## Architecture Decisions
 
 - **No scraping:** WPR has a clean GraphQL API — use it directly
-- **compute_rating() is deterministic:** partner adjustment + prior math lives in TypeScript, not Claude's synthesis. Claude fetches facts; code does math.
+- **Single agent loop:** gather + synthesis are one agent. Claude gathers data, reasons in context, and calls `output_rating` when ready. No separate synthesis step.
+- **compute_rating() dropped:** the formula produced near-zero adjustments. Claude reasons about magnitude contextually from the match data.
 - **Browser agent dropped:** unnecessary given the API
-- **Separate fetch layer from display layer:** Claude returns structured data; TypeScript formats output
-- **web_search (Anthropic built-in):** used for racket background lookups. Handled server-side — transparent to the agent loop, no tool handler needed. Just include `{ type: "web_search_20250305", name: "web_search" }` in the tools array.
+- **prepareBrief() injected into get_matches response:** Claude sees both raw match rows and pre-computed stats in one tool result
+- **web_search (Anthropic built-in):** `{ type: "web_search_20250305", name: "web_search", max_uses: 14 }`. Handled server-side. Agent uses confirmed WPR name (not original user query) for searches; follows maiden names / alternate names if background comes up empty.
+
+## File structure
+
+```
+src/
+  types.ts        — shared types (RatingResult, MatchBrief, Confidence, etc.) + constants
+  wpr.ts          — WPR GraphQL client (authenticateWPR, searchPlayers, getPlayer, getMatches)
+  agent.ts        — tool definitions, runAgent loop, prepareBrief, formatBrief
+  index.ts        — render + main entry point
+  prompts/
+    agent.ts      — agentPrompt (combined gather + reasoning + output instructions)
+```
