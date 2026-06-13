@@ -1,0 +1,14 @@
+{
+  "name": "piq",
+  "version": "0.0.1",
+  "description": "PadelIQ — WPR data pipeline POC",
+  "scripts": {
+    "start": "bun run src/index.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.54.0"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  }
+}
