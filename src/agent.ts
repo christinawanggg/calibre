@@ -1,11 +1,14 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { agentPrompt } from "./prompts/agent";
+import { refinePrompt } from "./prompts/refine";
 import { searchPlayers, getPlayer, getMatches } from "./wpr";
 import {
   MODEL, MATCH_WINDOW_YEARS, MS_PER_DAY, TOP_CANDIDATES,
   VOLATILITY_THRESHOLD, TRAJECTORY_THRESHOLD, TOOL,
   type MatchBrief, type RatingResult, type Trajectory,
 } from "./types";
+
+const REFINE_MODEL = "claude-haiku-4-5-20251001";
 
 // ─── Tool definitions ──────────────────────────────────────────────────────────
 
@@ -240,6 +243,37 @@ export async function runAgent(
     dossier:    [],
   };
   return { userId, result: rating ?? fallback };
+}
+
+// ─── Refinement pass ───────────────────────────────────────────────────────────
+
+export async function refine(result: RatingResult): Promise<RatingResult> {
+  if (!result.reasoning.length && !result.dossier.length) return result;
+
+  console.log(`\n── Refining output...`);
+
+  try {
+    const response = await client.messages.create({
+      model:       REFINE_MODEL,
+      max_tokens:  1024,
+      tools:       [outputRatingTool],
+      tool_choice: { type: "tool", name: TOOL.OUTPUT_RATING },
+      messages:    [{ role: "user", content: refinePrompt(result) }],
+    });
+
+    const block = response.content.find((b) => b.type === "tool_use");
+    if (!block || block.type !== "tool_use") return result;
+
+    const refined = block.input as RatingResult;
+    return {
+      ...result,
+      reasoning: refined.reasoning,
+      dossier:   refined.dossier,
+    };
+  } catch (err) {
+    console.warn(`  ⚠ Refinement failed, using raw output: ${err}`);
+    return result;
+  }
 }
 
 // ─── Match analysis ────────────────────────────────────────────────────────────

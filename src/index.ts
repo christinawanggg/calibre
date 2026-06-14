@@ -1,5 +1,5 @@
 import { authenticateWPR, getPlayer } from "./wpr";
-import { runAgent } from "./agent";
+import { runAgent, refine } from "./agent";
 import type { RatingResult } from "./types";
 
 // ─── Render ────────────────────────────────────────────────────────────────────
@@ -62,6 +62,7 @@ async function main() {
   console.log("✅ Got Bearer token\n");
 
   const { userId, result } = await runAgent(playerName, token);
+  const refined            = await refine(result);
 
   let wpr = 0;
   if (userId) {
@@ -73,7 +74,7 @@ async function main() {
     }
   }
 
-  render(playerName, wpr, result);
+  render(playerName, wpr, refined);
 }
 
 main().catch((err) => {

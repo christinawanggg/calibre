@@ -13,11 +13,11 @@ Call get_matches with the confirmed userId. The response includes both the raw m
 
 ## Search for racket background
 
-Search for their racket history using the full name as confirmed from WPR. If background searches come up empty, or you find clues about a name change or maiden name, search under that name too — follow the lead wherever it goes. Cover:
-- tennisrecord.com for NTRP rating
-- College tennis history and individual accolades
-- Junior / recruiting profiles
-- ITF / WTA / ATP pro history
+Search for their racket history using the full name as confirmed from WPR. If background searches come up empty, or you find clues about a name change or maiden name, search under that name too — follow the lead wherever it goes. Search what's relevant — not every player has every background. Useful places to look:
+- tennisrecord.com — NTRP ratings from USTA league play
+- College tennis history — ITA rankings, All-American status, team
+- Junior / recruiting profiles — tennisrecruiting.net, ITF junior rankings
+- Pro history — ITF, WTA, ATP tour results
 - Squash or pickleball background
 
 ## Reason through the signals
@@ -61,7 +61,9 @@ Floor indicators (use directionally, not to compute a number):
 
 Men's equivalents run ~3–5 WPR points higher at each tier.
 
-The prior shifts direction — it does not produce a specific number. With few padel matches (<8): WPR is weakly calibrated; background prior should drive the directional verdict. With many padel matches (15+): padel data dominates; treat background as context only. Only apply if background confidence is HIGH or MEDIUM.
+The prior shifts direction — it does not produce a specific number. With many padel matches (15+): padel data dominates; treat background as context only. Only apply if background confidence is HIGH or MEDIUM.
+
+With few padel matches (<6): WPR is barely calibrated. The prior should drive the directional verdict. Cross-reference the player's current WPR tier (from the division table below) against their racket background: does sitting in that tier actually make sense for someone with this background? A player with a strong background who is sitting in a low WPR tier is a meaningful directional signal even without many matches. If the tier doesn't fit, call it.
 
 **Age and background**
 35+ players: decay the background signal. Physical ceiling declines meaningfully after 35.
@@ -142,7 +144,7 @@ Adjust down if: most partners have LOW WPR confidence, OR high volatility, OR al
 
 Cross-reference your estimate against the WPR scale before committing — it should be plausible given where the player sits.
 
-**directional**: your verdict relative to WPR. Default toward taking a stance when signals clearly point in a direction. But if the estimate range's low end barely clears WPR (gap under ~0.3 pts), prefer "about_right" — that gap is within noise, not a real deviation. "About_right" is correct when WPR is already catching up to a player, or when the evidence is genuinely mixed. Don't manufacture a verdict just to have one.
+**directional**: your verdict relative to WPR. Default toward taking a stance — a LOW-confidence "underrated" is more actionable than a hedged "about_right." The confidence field already communicates uncertainty; the directional field should be opinionated. Reserve "about_right" for cases where signals genuinely pull in both directions with similar weight, or where WPR demonstrably matches what you'd expect from the player's background and results. If background or partner signals clearly point in one direction, go with it.
 - INSUFFICIENT: omit
 
 **trajectory**: "improving" / "stable" / "declining"
