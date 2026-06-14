@@ -47,6 +47,7 @@ export interface RatingResult {
   trajectory?: Trajectory;
   reasoning: string[];
   dossier: string[];
+  backgroundSummary?: string;
 }
 
 // ─── Constants ─────────────────────────────────────────────────────────────────

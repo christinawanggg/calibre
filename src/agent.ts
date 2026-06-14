@@ -52,6 +52,11 @@ const outputRatingTool: Anthropic.Tool = {
         description:
           "Biographical background only — school, sport history, NTRP, club, frequent partners, when they started padel. No WPR number, no match record, no W/L stats, no scores, no rating confidence. Max 5. Empty array if nothing found.",
       },
+      backgroundSummary: {
+        type: "string",
+        description:
+          "Comprehensive summary of everything found via web searches — racket sport history, NTRP, pro history, padel club, frequent partners, biographical facts, anything discovered. More complete than the dossier. Empty string if nothing found.",
+      },
     },
     required: ["confidence", "reasoning", "dossier"],
   },
@@ -106,14 +111,17 @@ const client = new Anthropic();
 export async function runAgent(
   playerName: string,
   token: string,
-): Promise<{ userId: string | null; result: RatingResult }> {
+  knownBackground?: string,
+): Promise<{ userId: string | null; result: RatingResult; playerProfile: any | null }> {
   console.log(`\n🎾 PadelIQ — looking up "${playerName}"\n`);
 
-  let userId: string | null    = null;
-  let rating: RatingResult | null = null;
+  let userId: string | null           = null;
+  let playerProfile: any | null       = null;
+  let rating: RatingResult | null     = null;
+  const profileCache = new Map<string, any>(); // wprId → full profile
 
   const messages: Anthropic.MessageParam[] = [
-    { role: "user", content: agentPrompt(playerName) },
+    { role: "user", content: agentPrompt(playerName, knownBackground) },
   ];
 
   while (true) {
@@ -138,6 +146,8 @@ export async function runAgent(
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
 
       for (const block of response.content) {
+        if (block.type === "server_tool_use" && block.name === "web_search")
+          console.log(`  → [web_search] "${(block.input as any).query}"`);
         if (block.type !== "tool_use") continue;
 
         const input = block.input as any;
@@ -151,6 +161,7 @@ export async function runAgent(
               candidates.slice(0, TOP_CANDIDATES).map(async (c: any) => {
                 try {
                   const p = await getPlayer(c.id, token);
+                  profileCache.set(p._id, p);
                   return {
                     id:          p._id,
                     name:        `${p.firstName} ${p.lastName}`.trim(),
@@ -173,8 +184,10 @@ export async function runAgent(
             );
           } else if (block.name === TOOL.GET_PLAYER) {
             toolResult = await getPlayer(input.id, token);
+            profileCache.set(toolResult._id, toolResult);
           } else if (block.name === TOOL.GET_MATCHES) {
-            userId = input.userId;
+            userId        = input.userId;
+            playerProfile = profileCache.get(input.userId) ?? await getPlayer(input.userId, token);
 
             const cutoff   = new Date();
             cutoff.setFullYear(cutoff.getFullYear() - MATCH_WINDOW_YEARS);
@@ -237,12 +250,14 @@ export async function runAgent(
     break;
   }
 
+  console.log(`\n── Agent done (${rating ? "rating committed" : "no rating"})`);
+
   const fallback: RatingResult = {
     confidence: "INSUFFICIENT",
     reasoning:  ["Agent did not commit to a rating."],
     dossier:    [],
   };
-  return { userId, result: rating ?? fallback };
+  return { userId, result: rating ?? fallback, playerProfile };
 }
 
 // ─── Refinement pass ───────────────────────────────────────────────────────────

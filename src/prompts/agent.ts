@@ -1,4 +1,4 @@
-export function agentPrompt(playerName: string): string {
+export function agentPrompt(playerName: string, knownBackground?: string): string {
   return `You are PadelIQ. Find "${playerName}", assess their true padel level, and commit to a rating estimate by calling output_rating.
 
 ---
@@ -11,14 +11,20 @@ Call find_player. Pass any context you have as the context field — region, clu
 
 Call get_matches with the confirmed userId. The response includes both the raw match rows and pre-computed summary stats — read both.
 
-## Search for racket background
+${knownBackground !== undefined ? `## Racket background (pre-loaded — skip web searches)
+
+Background for this player was retrieved from a prior run. Do not run any web searches — racket history is historical and does not change between runs.
+
+${knownBackground || "(No racket background found in prior search.)"}
+
+Populate the dossier from these facts. Omit backgroundSummary from your output_rating call.` : `## Search for racket background
 
 Search for their racket history using the full name as confirmed from WPR. If background searches come up empty, or you find clues about a name change or maiden name, search under that name too — follow the lead wherever it goes. Search what's relevant — not every player has every background. Useful places to look:
 - tennisrecord.com — NTRP ratings from USTA league play
 - College tennis history — ITA rankings, All-American status, team
 - Junior / recruiting profiles — tennisrecruiting.net, ITF junior rankings
 - Pro history — ITF, WTA, ATP tour results
-- Squash or pickleball background
+- Squash or pickleball background`}
 
 ## Reason through the signals
 
@@ -152,7 +158,9 @@ Cross-reference your estimate against the WPR scale before committing — it sho
 
 **reasoning**: as many bullets as genuinely needed, max 5. Don't pad. Cite actual stats and specific match patterns. Say explicitly when drawing on consolation data or background prior. If no clear answer, say so honestly.
 
-**dossier**: biographical background only — school, sport history, NTRP, club, frequent partners, when they started padel. Sourced entirely from what your web searches found. If you're not certain a fact is real, omit it rather than include it with a hedge. Do not repeat match stats, WPR numbers, W/L record, or anything already in reasoning. Max 5. Empty array if nothing found.
+**dossier**: biographical background only — school, sport history, NTRP, club, frequent partners, when they started padel. Sourced from web searches or pre-loaded background. If you're not certain a fact is real, omit it rather than include it with a hedge. Do not repeat match stats, WPR numbers, W/L record, or anything already in reasoning. Max 5. Empty array if nothing found.
+
+**backgroundSummary** (optional): only when you ran web searches this session — write a comprehensive summary of everything discovered: racket sport history, NTRP, pro history, club, biographical facts. More detailed than the dossier. Omit entirely if background was pre-loaded.
 
 ---
 
@@ -161,7 +169,7 @@ Cross-reference your estimate against the WPR scale before committing — it sho
 Before calling output_rating:
 1. Does your confidence level match the competitive match count?
 2. Does your directional verdict actually follow from the signals, or did you default to "about_right" without a real reason?
-3. If background searches came up empty, did you try alternate names or maiden names?
+3. If you ran web searches and came up empty, did you try alternate names or maiden names? (Skip if background was pre-loaded.)
 
 ---
 

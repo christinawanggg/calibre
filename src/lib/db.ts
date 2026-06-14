@@ -18,7 +18,7 @@ export const players = pgTable("players", {
 export const playerRatings = pgTable("player_ratings", {
   id:           uuid("id").primaryKey().defaultRandom(),
   playerId:     uuid("player_id").notNull().references(() => players.id),
-  wpr:          numeric("wpr", { precision: 6, scale: 2 }),
+  wprRating:    numeric("wpr_rating", { precision: 6, scale: 2 }),
   confidence:   text("confidence").notNull(),
   directional:  text("directional"),
   trajectory:   text("trajectory"),
@@ -43,5 +43,5 @@ export const playerBackgrounds = pgTable("player_backgrounds", {
 const connectionString = process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DATABASE_URL must be set in .env");
 
-const sql    = postgres(connectionString, { prepare: false }); // prepare: false required for Supabase pooler
-export const db = drizzle(sql, { schema: { players, playerRatings, playerBackgrounds } });
+export const sql = postgres(connectionString, { prepare: false }); // prepare: false required for Supabase pooler
+export const db  = drizzle(sql, { schema: { players, playerRatings, playerBackgrounds } });

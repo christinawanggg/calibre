@@ -1,5 +1,7 @@
-import { authenticateWPR, getPlayer } from "./wpr";
+import { authenticateWPR } from "./wpr";
 import { runAgent, refine } from "./agent";
+import { saveRun } from "./lib/save";
+import { sql } from "./lib/db";
 import type { RatingResult } from "./types";
 
 // ─── Render ────────────────────────────────────────────────────────────────────
@@ -45,6 +47,11 @@ function render(playerName: string, wpr: number, result: RatingResult): void {
     result.dossier.forEach((bullet) => console.log(`  • ${bullet}`));
   }
 
+  if (result.backgroundSummary) {
+    console.log(`\nBACKGROUND`);
+    console.log(`  ${result.backgroundSummary}`);
+  }
+
   console.log(`\n${line}`);
 }
 
@@ -61,20 +68,16 @@ async function main() {
   const token = await authenticateWPR();
   console.log("✅ Got Bearer token\n");
 
-  const { userId, result } = await runAgent(playerName, token);
-  const refined            = await refine(result);
+  const { result, playerProfile } = await runAgent(playerName, token);
+  const refined                   = await refine(result);
 
-  let wpr = 0;
-  if (userId) {
-    try {
-      const player = await getPlayer(userId, token);
-      wpr = player.ratingVerified?.value ?? player.rating?.value ?? 0;
-    } catch (err) {
-      console.error("Could not fetch player profile for WPR:", err);
-    }
+  if (playerProfile) {
+    await saveRun(playerProfile, refined);
   }
 
+  const wpr = playerProfile?.ratingVerified?.value ?? playerProfile?.rating?.value ?? 0;
   render(playerName, wpr, refined);
+  await sql.end();
 }
 
 main().catch((err) => {
