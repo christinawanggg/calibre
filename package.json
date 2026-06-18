@@ -3,11 +3,15 @@
   "version": "0.0.1",
   "description": "PadelIQ — WPR data pipeline POC",
   "scripts": {
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "dev:server": "bun run src/server.ts",
+    "dev:client": "cd client && bun run dev",
+    "build:client": "cd client && bun run build"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.54.0",
     "drizzle-orm": "^0.45.2",
+    "hono": "^4.12.25",
     "postgres": "^3.4.9"
   },
   "devDependencies": {

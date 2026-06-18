@@ -39,13 +39,18 @@ export async function saveRun(playerProfile: any, refined: RatingResult): Promis
   });
   console.log(`  → rating: ${refined.confidence}${refined.directional ? ` / ${refined.directional}` : ""}`);
 
-  // 3. Save background (NULL = searched, nothing found — always insert so we know we searched)
-  await db.insert(playerBackgrounds).values({
-    playerId:   player.id,
-    background: refined.backgroundSummary ?? null,
-    expiresAt:  backgroundExpiresAt(),
-  });
-  console.log(`  → background: ${refined.backgroundSummary ? "saved" : "empty (searched, nothing found)"}`);
+  // 3. Save background only when agent ran searches (backgroundSummary defined = searched this session)
+  //    undefined = background was pre-loaded, existing row is still fresh — leave it alone
+  if (refined.backgroundSummary !== undefined) {
+    await db.insert(playerBackgrounds).values({
+      playerId:   player.id,
+      background: refined.backgroundSummary || null,
+      expiresAt:  backgroundExpiresAt(),
+    });
+    console.log(`  → background: ${refined.backgroundSummary ? "saved" : "empty (searched, nothing found)"}`);
+  } else {
+    console.log(`  → background: skipped (pre-loaded)`);
+  }
 
   console.log(`✓ Saved`);
 }
