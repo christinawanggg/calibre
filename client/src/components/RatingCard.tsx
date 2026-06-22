@@ -1,324 +1,217 @@
-import { useState } from "react";
 import type { RateResponse } from "../types";
+import {
+  C,
+  VERDICT_CONFIG,
+  CONFIDENCE_CONFIG,
+  TRAJECTORY_CONFIG,
+} from "../lib/tokens";
+import { labelStyle, BORDER } from "../lib/theme";
+import { Avatar } from "./ui/Avatar";
+import { BulletList } from "./ui/BulletList";
 
 interface Props {
   data: RateResponse;
   onReset: () => void;
 }
 
-function photoUrl(raw: string | null): string | null {
-  if (!raw) return null;
-  if (raw.startsWith("http")) return raw;
-  const key = raw.startsWith("/") ? raw.slice(1) : raw;
-  const payload = JSON.stringify({
-    bucket: "redpadel-production-ui-files",
-    key,
-    edits: {
-      resize: {
-        width: 128,
-        height: 128,
-        fit: "contain",
-        background: { r: 0, g: 0, b: 0, alpha: 0 },
-      },
-    },
-  });
-  return `https://d122z1d8jk9gd0.cloudfront.net/${btoa(payload)}`;
+function Divider() {
+  return (
+    <hr style={{ border: "none", borderTop: BORDER.divider, margin: 0 }} />
+  );
 }
 
-function initials(name: string): string {
-  return name
-    .split(" ")
-    .map((w) => w[0])
-    .slice(0, 2)
-    .join("")
-    .toUpperCase();
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <h3
+      style={{
+        margin: 0,
+        fontSize: 12,
+        fontWeight: 500,
+        letterSpacing: "0.08em",
+        textTransform: "uppercase",
+        color: C.chalk,
+      }}
+    >
+      {children}
+    </h3>
+  );
 }
-
-const DIRECTIONAL_LABEL: Record<string, string> = {
-  underrated: "Underrated",
-  about_right: "About right",
-  overrated: "Overrated",
-};
-
-const DIRECTIONAL_COLOR: Record<string, string> = {
-  underrated: "#22c55e",
-  about_right: "#a3a3a3",
-  overrated: "#ef4444",
-};
-
-const CONFIDENCE_COLOR: Record<string, string> = {
-  HIGH: "#2563eb",
-  MEDIUM: "#7c3aed",
-  LOW: "#d97706",
-  INSUFFICIENT: "#6b7280",
-};
-
-const TRAJECTORY_LABEL: Record<string, string> = {
-  improving: "↑ Improving",
-  stable: "→ Stable",
-  declining: "↓ Declining",
-};
 
 export function RatingCard({ data, onReset }: Props) {
-  const [bgOpen, setBgOpen] = useState(false);
   const { player, rating } = data;
-  const showNumber =
-    rating.confidence === "HIGH" || rating.confidence === "MEDIUM";
-  const url = photoUrl(player.photo);
+  const insufficient = rating.confidence === "INSUFFICIENT";
+
+  const metaCols = [
+    // Verdict
+    (() => {
+      const cfg = rating.directional
+        ? VERDICT_CONFIG[rating.directional]
+        : null;
+      return (
+        <div key="verdict" style={{ flex: 1 }}>
+          <div style={labelStyle}>Verdict</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: cfg ? cfg.color : C.chalk }}>
+            {cfg ? cfg.label : "—"}
+          </div>
+        </div>
+      );
+    })(),
+
+    // Trajectory — omit entirely if null
+    rating.trajectory
+      ? (() => {
+          const cfg = TRAJECTORY_CONFIG[rating.trajectory!];
+          const { Icon, label, color } = cfg;
+          return (
+            <div key="trajectory" style={{ flex: 1 }}>
+              <div style={labelStyle}>Trajectory</div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 500,
+                  color,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 3,
+                }}
+              >
+                <Icon size={13} color={color} stroke={2} />
+                {label}
+              </div>
+            </div>
+          );
+        })()
+      : null,
+
+    // Confidence
+    (() => {
+      const cfg = CONFIDENCE_CONFIG[rating.confidence];
+      return (
+        <div key="confidence" style={{ flex: 1 }}>
+          <div style={labelStyle}>Confidence</div>
+          <div style={{ fontSize: 13, fontWeight: 500, color: cfg.color }}>
+            {cfg.label}
+          </div>
+        </div>
+      );
+    })(),
+  ].filter(Boolean);
 
   return (
-    <div>
+    <div
+      style={{
+        background: C.white,
+        border: BORDER.card,
+        borderRadius: 14,
+        padding: "24px 26px",
+      }}
+    >
       {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 14,
-          marginBottom: 20,
-        }}
-      >
+      <div style={{ paddingBottom: 20, display: "flex", alignItems: "center", gap: 12 }}>
+        <Avatar name={player.name} photo={player.photo} size={72} />
+        <h2 style={{ margin: 0, fontSize: 17, fontWeight: 500, color: C.ink }}>
+          {player.name}
+        </h2>
+      </div>
+
+      <Divider />
+
+      {/* Rating block + meta row */}
+      <div style={{ paddingTop: 20, paddingBottom: 20 }}>
+        {/* Inset rating panel */}
         <div
           style={{
-            width: 48,
-            height: 48,
-            borderRadius: "50%",
-            flexShrink: 0,
-            overflow: "hidden",
-            background: "#2a2a2a",
+            background: C.parchment,
+            borderRadius: 10,
+            padding: "16px 18px",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            fontSize: 14,
-            fontWeight: 600,
-            color: "#888",
+            gap: 16,
           }}
         >
-          {url ? (
-            <img
-              src={url}
-              alt={player.name}
-              width={48}
-              height={48}
-              style={{ objectFit: "cover" }}
-              onError={(e) => {
-                (e.target as HTMLImageElement).style.display = "none";
-              }}
-            />
-          ) : (
-            initials(player.name)
+          {/* WPR official */}
+          <div style={{ flex: 1 }}>
+            <div style={labelStyle}>WPR official</div>
+            <div style={{ fontSize: 26, fontWeight: 500, color: C.ink }}>
+              {player.wprRating != null ? player.wprRating.toFixed(2) : "—"}
+            </div>
+          </div>
+
+          {/* Arrow + Our estimate — only shown when there's something to display */}
+          {(insufficient || rating.estimate) && (
+            <>
+              <div style={{ fontSize: 20, color: insufficient ? C.chalk : C.walnut.mid }}>
+                →
+              </div>
+              <div style={{ flex: 1, textAlign: "right" }}>
+                <div style={{ ...labelStyle, marginBottom: 4 }}>Our estimate</div>
+                {insufficient ? (
+                  <div style={{ fontSize: 13, fontStyle: "italic", color: C.chalk }}>
+                    Not enough data
+                  </div>
+                ) : (
+                  <div style={{ fontSize: 26, fontWeight: 500, color: C.walnut.dark }}>
+                    {rating.estimate!.low} – {rating.estimate!.high}
+                  </div>
+                )}
+              </div>
+            </>
           )}
         </div>
 
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              flexWrap: "wrap",
-            }}
-          >
-            <h2
-              style={{
-                margin: 0,
-                fontSize: 20,
-                fontWeight: 700,
-                color: "#fff",
-              }}
-            >
-              {player.name}
-            </h2>
-            <span
-              style={{
-                fontSize: 12,
-                padding: "3px 10px",
-                borderRadius: 99,
-                background: CONFIDENCE_COLOR[rating.confidence] + "22",
-                color: CONFIDENCE_COLOR[rating.confidence],
-                fontWeight: 600,
-              }}
-            >
-              {rating.confidence}
-            </span>
-          </div>
-          <div style={{ color: "#888", fontSize: 13, marginTop: 2 }}>
-            {[
-              player.wprRating != null
-                ? `WPR ${player.wprRating.toFixed(2)}`
-                : null,
-              player.gender,
-            ]
-              .filter(Boolean)
-              .join(" · ")}
-          </div>
-        </div>
+        {/* Meta row */}
+        <div style={{ display: "flex", marginTop: 16 }}>{metaCols}</div>
       </div>
 
-      {/* Verdict row */}
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          marginBottom: 20,
-          flexWrap: "wrap",
-          alignItems: "baseline",
-        }}
-      >
-        {rating.directional && (
-          <div
-            style={{
-              fontWeight: 700,
-              fontSize: 18,
-              color: DIRECTIONAL_COLOR[rating.directional],
-            }}
-          >
-            {DIRECTIONAL_LABEL[rating.directional]}
-          </div>
-        )}
-        {showNumber && rating.estimate && (
-          <div style={{ fontSize: 16, color: "#d4d4d8" }}>
-            {rating.estimate.low} – {rating.estimate.high}
-          </div>
-        )}
-        {showNumber && rating.trajectory && (
-          <div style={{ fontSize: 14, color: "#888" }}>
-            {TRAJECTORY_LABEL[rating.trajectory]}
-          </div>
-        )}
-      </div>
-
-      {/* Reasoning */}
+      {/* Why this estimate */}
       {rating.reasoning.length > 0 && (
-        <section style={{ marginBottom: 20 }}>
-          <h3
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#888",
-              marginBottom: 10,
-            }}
-          >
-            Reasoning
-          </h3>
-          <ul
-            style={{
-              margin: 0,
-              paddingLeft: 18,
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-            }}
-          >
-            {rating.reasoning.map((b, i) => (
-              <li
-                key={i}
-                style={{ color: "#d4d4d8", fontSize: 14, lineHeight: 1.5 }}
-              >
-                {b}
-              </li>
-            ))}
-          </ul>
-        </section>
+        <>
+          <Divider />
+          <section style={{ paddingTop: 20, paddingBottom: 20 }}>
+            <SectionHeader>Why this estimate</SectionHeader>
+            <div style={{ marginTop: 12 }}>
+              <BulletList items={rating.reasoning} />
+            </div>
+          </section>
+        </>
       )}
 
-      {/* Dossier */}
-      {rating.dossier.length > 0 && (
-        <section style={{ marginBottom: 20 }}>
-          <h3
-            style={{
-              fontSize: 11,
-              fontWeight: 600,
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              color: "#888",
-              marginBottom: 10,
-            }}
-          >
-            Dossier
-          </h3>
-          <ul
-            style={{
-              margin: 0,
-              paddingLeft: 18,
-              display: "flex",
-              flexDirection: "column",
-              gap: 6,
-            }}
-          >
-            {rating.dossier.map((b, i) => (
-              <li
-                key={i}
-                style={{ color: "#d4d4d8", fontSize: 14, lineHeight: 1.5 }}
-              >
-                {b}
-              </li>
-            ))}
-          </ul>
-        </section>
+      {/* Dossier — hidden in insufficient state */}
+      {!insufficient && rating.dossier.length > 0 && (
+        <>
+          <Divider />
+          <section style={{ paddingTop: 20, paddingBottom: 20 }}>
+            <SectionHeader>Dossier</SectionHeader>
+            <div style={{ marginTop: 12 }}>
+              <BulletList items={rating.dossier} />
+            </div>
+          </section>
+        </>
       )}
 
-      {/* Background (collapsed) */}
-      {rating.backgroundSummary && (
-        <section style={{ marginBottom: 20 }}>
-          <button
-            onClick={() => setBgOpen((v) => !v)}
-            style={{
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              padding: 0,
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-            }}
-          >
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                letterSpacing: "0.08em",
-                textTransform: "uppercase",
-                color: "#888",
-              }}
-            >
-              Background
-            </span>
-            <span style={{ color: "#555", fontSize: 12 }}>
-              {bgOpen ? "▲" : "▼"}
-            </span>
-          </button>
-          {bgOpen && (
-            <p
-              style={{
-                marginTop: 8,
-                color: "#a1a1aa",
-                fontSize: 13,
-                lineHeight: 1.6,
-              }}
-            >
-              {rating.backgroundSummary}
-            </p>
-          )}
-        </section>
-      )}
+      <Divider />
 
-      <button
-        onClick={onReset}
-        style={{
-          marginTop: 8,
-          padding: "8px 16px",
-          fontSize: 14,
-          background: "none",
-          border: "1px solid #333",
-          borderRadius: 6,
-          color: "#888",
-          cursor: "pointer",
-        }}
-      >
-        Search again
-      </button>
+      {/* Footer */}
+      <div style={{ paddingTop: 16 }}>
+        <button
+          className="btn-search-again"
+          onClick={onReset}
+          onMouseEnter={(e) => (e.currentTarget.style.background = C.parchment)}
+          onMouseLeave={(e) => (e.currentTarget.style.background = "transparent")}
+          style={{
+            fontSize: 12,
+            fontWeight: 500,
+            padding: "7px 16px",
+            borderRadius: 8,
+            border: BORDER.card,
+            background: "transparent",
+            color: C.walnut.btn,
+            cursor: "pointer",
+          }}
+        >
+          Search again
+        </button>
+      </div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { SearchDropdown } from "./components/SearchDropdown";
 import { RatingCard } from "./components/RatingCard";
 import { AgentLoader } from "./components/AgentLoader";
 import { ratePlayer } from "./api";
+import { C } from "./lib/tokens";
 import type { Candidate, RateResponse } from "./types";
 
 type AppState =
@@ -27,20 +28,30 @@ export default function App() {
   const reset = () => setState({ stage: "idle" });
 
   return (
-    <div style={{ minHeight: "100vh", background: "#09090b", color: "#fff", fontFamily: "system-ui, sans-serif" }}>
-      <div style={{ maxWidth: 640, margin: "0 auto", padding: "60px 24px" }}>
-        <h1 style={{ fontSize: 28, fontWeight: 700, marginBottom: 8, letterSpacing: "-0.02em" }}>
-          PadelIQ
+    <div style={{ minHeight: "100vh" }}>
+      <div style={{ maxWidth: 640, margin: "0 auto", padding: "32px 16px" }}>
+        <h1
+          style={{
+            fontSize: 28,
+            fontWeight: 700,
+            marginBottom: 8,
+            letterSpacing: "-0.02em",
+            color: C.ink,
+          }}
+        >
+          RealPadelRating
         </h1>
-        <p style={{ color: "#71717a", fontSize: 15, marginBottom: 36 }}>
-          True padel rating — partner-adjusted
+        <p style={{ color: C.dust, fontSize: 15, marginBottom: 36 }}>
+          The rating WPR isn't telling you
         </p>
 
         {(state.stage === "idle" || state.stage === "error") && (
           <>
             <SearchDropdown onSelect={handleSelect} disabled={false} />
             {state.stage === "error" && (
-              <p style={{ marginTop: 16, color: "#ef4444", fontSize: 14 }}>{state.message}</p>
+              <p style={{ marginTop: 16, color: C.oxblood.dark, fontSize: 14 }}>
+                {state.message}
+              </p>
             )}
           </>
         )}

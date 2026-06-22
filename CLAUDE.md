@@ -1,5 +1,8 @@
 # PadelIQ — Project Context & Domain Quirks
 
+## UI / Frontend rules
+- **Minimum font size is 12px** — never go below this, including uppercase labels, meta text, and section headers.
+
 ## What we're building
 PadelIQ: a padel player rating tool that corrects World Padel Rating (WPR) for:
 1. **Partner quality** — doubles match; your rating shouldn't drop when your partner drags you down
