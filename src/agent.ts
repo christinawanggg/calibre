@@ -263,15 +263,28 @@ export async function runAgent(
 // ─── Refinement pass ───────────────────────────────────────────────────────────
 
 export async function refine(result: RatingResult): Promise<RatingResult> {
-  if (!result.reasoning.length && !result.dossier.length) return result;
+  if (!result.dossier.length) return result;
 
   console.log(`\n── Refining output...`);
 
   try {
+    const refineTool: Anthropic.Tool = {
+      name: TOOL.OUTPUT_RATING,
+      description: "Output the rewritten dossier.",
+      input_schema: {
+        type: "object" as const,
+        properties: {
+          confidence: { type: "string", enum: ["HIGH", "MEDIUM", "LOW", "INSUFFICIENT"] },
+          dossier:    { type: "array", items: { type: "string" } },
+        },
+        required: ["confidence", "dossier"],
+      },
+    };
+
     const response = await client.messages.create({
       model:       REFINE_MODEL,
-      max_tokens:  1024,
-      tools:       [outputRatingTool],
+      max_tokens:  512,
+      tools:       [refineTool],
       tool_choice: { type: "tool", name: TOOL.OUTPUT_RATING },
       messages:    [{ role: "user", content: refinePrompt(result) }],
     });
@@ -282,8 +295,7 @@ export async function refine(result: RatingResult): Promise<RatingResult> {
     const refined = block.input as RatingResult;
     return {
       ...result,
-      reasoning: refined.reasoning,
-      dossier:   refined.dossier,
+      dossier: refined.dossier,
     };
   } catch (err) {
     console.warn(`  ⚠ Refinement failed, using raw output: ${err}`);

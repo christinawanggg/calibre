@@ -1,4 +1,4 @@
-const RATING_TTL_HOURS    = 48;
+const RATING_TTL_HOURS    = 120; // 5 days
 const BACKGROUND_TTL_DAYS = 365;
 
 export function ratingExpiresAt(): Date {
