@@ -1,2 +1,6 @@
 .env
 node_modules/
+
+# Runtime prompts — proprietary, kept local and out of public git
+src/prompts/agent.ts
+src/prompts/refine.ts
